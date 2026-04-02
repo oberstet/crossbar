@@ -7,7 +7,6 @@
 
 import copy
 import json
-
 from importlib.resources import files
 
 import pytest
