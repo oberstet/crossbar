@@ -1054,6 +1054,7 @@ class MarketMaker(object):
         raise NotImplementedError()
 
     @wamp.register(None, check_types=True)
+    @inlineCallbacks
     def revoke_offer(self, key_id, details: Optional[CallDetails] = None):
         """
         Called by XBR Provider to revoke (on-going) sale of a key. The market maker will stop

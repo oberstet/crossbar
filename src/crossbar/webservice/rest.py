@@ -137,6 +137,7 @@ class RouterWebServiceWebhook(RouterWebService):
     """
 
     @staticmethod
+    @inlineCallbacks
     def create(transport, path: str, config: Dict[str, Any]):
         """
         Create a new HTTP/POST Webhook service (part of REST-bridge).
