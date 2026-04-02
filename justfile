@@ -330,6 +330,14 @@ prep-release:
     @echo 'For rel key: this must be done (incl. *.sec key handling) by maintainer!'
     @echo ''
 
+# Auto-bump to next dev version based on current date (CalVer: YY.M.1.dev1)
+bump-dev:
+    #!/usr/bin/env bash
+    set -e
+    NEXT="$(date +%-y).$(date +%-m).1.dev1"
+    echo "Auto-computed next dev version: ${NEXT}"
+    just bump-next "${NEXT}"
+
 # Post-Tag Bump: Set a specific next version (e.g. `just bump-next 26.1.2.dev1`)
 bump-next next_version:
     @echo "Bumping metadata to {{next_version}}..."
