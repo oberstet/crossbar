@@ -7,8 +7,8 @@
 
 import copy
 import json
+from importlib.resources import files
 
-import pkg_resources
 import pytest
 
 from crossbar._util import _deep_merge_object, merge_config
@@ -22,11 +22,8 @@ def master_personality():
 
 @pytest.fixture(scope="function")
 def master_config():
-    # built-in config
-    # filename = pkg_resources.resource_filename('crossbar', 'master/node/config.json')
-
     # "copied" built-in config for testing
-    filename = pkg_resources.resource_filename("crossbar", "test/test_config.json")
+    filename = str(files("crossbar").joinpath("test/test_config.json"))
 
     with open(filename) as f:
         config = json.load(f)
@@ -258,14 +255,14 @@ def test_merge_same(master_personality, master_config):
 
 def make_test_func(cfg_name):
     def test_merge_config(master_personality, master_config):
-        filename = pkg_resources.resource_filename("crossbar", "tests/test_{}.json".format(cfg_name))
+        filename = str(files("crossbar").joinpath("tests/test_{}.json".format(cfg_name)))
         with open(filename) as f:
             test_config = json.load(f)
 
             # a mergeable override-config does NOT need to be valid in itself
             # MasterPersonality.check_config(MasterPersonality, test_config)
 
-        filename = pkg_resources.resource_filename("crossbar", "tests/test_{}_merged.json".format(cfg_name))
+        filename = str(files("crossbar").joinpath("tests/test_{}_merged.json".format(cfg_name)))
         with open(filename) as f:
             test_config_merged = json.load(f)
             MasterPersonality.check_config(MasterPersonality, test_config_merged)
@@ -288,7 +285,7 @@ if __name__ == "__main__":
     sys.setrecursionlimit(10000)
 
     # this is the base config into the test configs will be merged
-    filename = pkg_resources.resource_filename("crossbar", "tests/test_config.json")
+    filename = str(files("crossbar").joinpath("tests/test_config.json"))
     with open(filename) as f:
         _master_config = json.load(f)
 
