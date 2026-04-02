@@ -5,6 +5,15 @@
 Changelog
 =========
 
+26.4.1
+------
+
+* fix: add missing ``@inlineCallbacks`` decorator on ``RouterWebServiceWebhook.create()`` (`#2164 <https://github.com/crossbario/crossbar/issues/2164>`_)
+* fix: add missing ``@inlineCallbacks`` decorator on ``MarketMaker.revoke_offer()`` (`#2164 <https://github.com/crossbario/crossbar/issues/2164>`_)
+* fix: replace deprecated ``pkg_resources`` with ``importlib.resources`` in test code (`#2167 <https://github.com/crossbario/crossbar/issues/2167>`_)
+* new: add ``bump-dev`` justfile recipe for auto CalVer versioning (`#2166 <https://github.com/crossbario/crossbar/issues/2166>`_)
+* fix: handle ``ty`` rule name differences across versions in ``check-typing`` recipe
+
 25.12.1
 -------
 
