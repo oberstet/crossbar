@@ -561,6 +561,15 @@ check-typing venv="":
     VENV_PYTHON=$(just --quiet _get-venv-python {{ venv }})
     echo "==> Running static type checks with ty..."
     echo "    Using Python: ${VENV_PYTHON}"
+
+    # ty renamed "not-subscriptable" to "non-subscriptable" between versions;
+    # detect which name this version uses to avoid unknown-rule warnings.
+    if ty check --ignore non-subscriptable src/crossbar/__init__.py --python "${VENV_PYTHON}" 2>&1 | grep -q 'Unknown rule.*non-subscriptable'; then
+        SUBSCRIPT_RULE="not-subscriptable"
+    else
+        SUBSCRIPT_RULE="non-subscriptable"
+    fi
+
     ty check \
         --python "${VENV_PYTHON}" \
         --ignore unresolved-import \
@@ -579,7 +588,7 @@ check-typing venv="":
         --ignore too-many-positional-arguments \
         --ignore unknown-argument \
         --ignore missing-argument \
-        --ignore not-subscriptable \
+        --ignore "${SUBSCRIPT_RULE}" \
         --ignore not-iterable \
         --ignore no-matching-overload \
         --ignore conflicting-declarations \
