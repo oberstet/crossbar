@@ -186,6 +186,81 @@ For production Docker images, use the frozen lock file:
 This ensures the production container has exactly the same dependencies that were
 tested in CI and verified during development.
 
+Dependabot and Automated Updates
+--------------------------------
+
+Crossbar.io uses `Dependabot <https://docs.github.com/en/code-security/dependabot>`_
+to track upstream dependency releases. The configuration is version-controlled in
+``.github/dependabot.yml`` (not just GitHub UI settings), so the bot's behavior is
+explicit, reviewable, and reproducible.
+
+Because we maintain a two-tier dependency model — abstract ``>=`` floors (with
+deliberate caps) in ``pyproject.toml``, and exact pins in ``uv.lock`` — Dependabot
+PRs are reviewed using a simple rule based on **which files the PR touches**.
+
+The two-lane review policy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Fast lane — PR touches** ``uv.lock`` **only:**
+
+The new version fits *within* our existing ``pyproject.toml`` constraints. This is
+almost always a transitive dependency, or a direct one with headroom under its cap.
+Our declared compatibility contract is unchanged.
+
+- **Action:** merge once CI is green.
+
+**Manual lane — PR touches** ``pyproject.toml`` **as well:**
+
+Dependabot had to **rewrite a declared constraint** to let the new version in —
+usually to cross an upper cap we set on purpose. This is a change to our
+compatibility contract, not just a re-pin.
+
+- **Action:** review before merging. Read the upstream changelog/migration guide,
+  check *how* the constraint was rewritten (did it keep a sane cap?), and apply
+  extra scrutiny to major-version bumps of TLS/crypto-adjacent dependencies
+  (e.g. ``urllib3``, ``pyopenssl``, ``cryptography``) — green CI is necessary but
+  not sufficient for those, since CI may not exercise every TLS, proxy, or retry
+  code path.
+
+.. note::
+
+   Patch and minor bumps are **grouped** into a single PR to reduce noise. If a
+   grouped PR happens to touch ``pyproject.toml``, the whole PR is treated as the
+   manual lane.
+
+Ignored and capped dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``.github/dependabot.yml`` **ignores major-version updates** for dependencies that
+carry a deliberate major cap in ``pyproject.toml`` (``urllib3``, ``h2``,
+``hyperframe``, ``priority``). We never want to be auto-nudged across a major
+boundary we pinned on purpose; those bumps are done by hand after reviewing the
+upstream migration guide.
+
+A few dependencies are capped at the **minor** level instead (``idna``,
+``eth-abi``, ``parsimonious``). These are not hard-ignored, but any bump rewrites
+their ``pyproject.toml`` cap and therefore lands in the manual review lane anyway.
+
+.. note::
+
+   These ignore rules only suppress *routine version updates*. Dependabot
+   **security advisories** still raise PRs for vulnerable versions regardless of
+   the caps above — security fixes are never silently held back.
+
+Relationship to ``just update-uvlock``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dependabot is the **notifier and CI gate**, not the source of truth for how the
+lockfile is resolved. The canonical way we refresh ``uv.lock`` remains:
+
+.. code-block:: bash
+
+   just update-uvlock
+
+which pins resolution to the lowest supported Python (3.11) for widest
+compatibility. When in doubt — for example, to reconcile several Dependabot PRs at
+once — re-run ``just update-uvlock`` locally and commit the result.
+
 References
 ----------
 
