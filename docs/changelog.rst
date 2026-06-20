@@ -5,9 +5,15 @@
 Changelog
 =========
 
-26.4.1
+26.6.1
 ------
 
+* new: coordinated WAMP **26.6.x release train** — pin the coordinated dependency floor: ``autobahn>=26.6.2`` (cryptosign import fix), ``txaio>=26.6.1``, ``zlmdb>=26.6.1``, ``cfxdb>=26.6.1``, ``xbr>=26.6.1`` (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
+* new: track the application ``uv.lock`` for reproducible builds (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
+* new: Crossbar.io 26.6 release key (``crossbar-26-6.pub``)
+* fix: CI/CD release publishes the exact artifacts built and verified in the ``main`` workflow (download-artifact-verified) instead of rebuilding, preserving the chain of custody (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
+* fix: converge release Discussions posting on the shared ``release-post-comment.yml`` (category resolved by name) (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
+* new: sync shared ``.ai`` and ``.cicd`` submodules to the group-wide canonical revisions (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
 * fix: add missing ``@inlineCallbacks`` decorator on ``RouterWebServiceWebhook.create()`` (`#2164 <https://github.com/crossbario/crossbar/issues/2164>`_)
 * fix: add missing ``@inlineCallbacks`` decorator on ``MarketMaker.revoke_offer()`` (`#2164 <https://github.com/crossbario/crossbar/issues/2164>`_)
 * fix: replace deprecated ``pkg_resources`` with ``importlib.resources`` in test code (`#2167 <https://github.com/crossbario/crossbar/issues/2167>`_)
