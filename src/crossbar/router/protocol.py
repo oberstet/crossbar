@@ -423,7 +423,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(FlatBuffersSerializer(batched=True))
                     serializers.append(FlatBuffersSerializer())
-                except ImportError("FlatBuffersSerializer"):
+                except ImportError:
                     self.log.warn("Warning: could not load WAMP-FlatBuffers serializer")
                 else:
                     sers.discard("flatbuffers")
@@ -435,7 +435,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(CBORSerializer(batched=True))
                     serializers.append(CBORSerializer())
-                except ImportError("CBORSerializer"):
+                except ImportError:
                     self.log.warn("Warning: could not load WAMP-CBOR serializer")
                 else:
                     sers.discard("cbor")
@@ -447,7 +447,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(MsgPackSerializer(batched=True))
                     serializers.append(MsgPackSerializer())
-                except ImportError("MsgPackSerializer"):
+                except ImportError:
                     self.log.warn("Warning: could not load WAMP-MsgPack serializer")
                 else:
                     sers.discard("msgpack")
@@ -459,7 +459,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(UBJSONSerializer(batched=True))
                     serializers.append(UBJSONSerializer())
-                except ImportError("UBJSONSerializer"):
+                except ImportError:
                     self.log.warn("Warning: could not load WAMP-UBJSON serializer")
                 else:
                     sers.discard("ubjson")
@@ -471,7 +471,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(JsonSerializer(batched=True))
                     serializers.append(JsonSerializer())
-                except ImportError("JsonSerializer"):
+                except ImportError:
                     self.log.warn("Warning: could not load WAMP-JSON serializer")
                 else:
                     sers.discard("json")
