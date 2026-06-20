@@ -423,8 +423,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(FlatBuffersSerializer(batched=True))
                     serializers.append(FlatBuffersSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-FlatBuffers serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-FlatBuffers serializer: {err}", err=e)
                 else:
                     sers.discard("flatbuffers")
 
@@ -435,8 +435,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(CBORSerializer(batched=True))
                     serializers.append(CBORSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-CBOR serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-CBOR serializer: {err}", err=e)
                 else:
                     sers.discard("cbor")
 
@@ -447,8 +447,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(MsgPackSerializer(batched=True))
                     serializers.append(MsgPackSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-MsgPack serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-MsgPack serializer: {err}", err=e)
                 else:
                     sers.discard("msgpack")
 
@@ -459,8 +459,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(UBJSONSerializer(batched=True))
                     serializers.append(UBJSONSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-UBJSON serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-UBJSON serializer: {err}", err=e)
                 else:
                     sers.discard("ubjson")
 
@@ -471,8 +471,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
 
                     serializers.append(JsonSerializer(batched=True))
                     serializers.append(JsonSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-JSON serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-JSON serializer: {err}", err=e)
                 else:
                     sers.discard("json")
 
@@ -619,8 +619,8 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     from autobahn.wamp.serializer import FlatBuffersSerializer
 
                     serializers.append(FlatBuffersSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-FlatBuffers serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-FlatBuffers serializer: {err}", err=e)
                 else:
                     sers.discard("flatbuffers")
 
@@ -630,8 +630,8 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     from autobahn.wamp.serializer import CBORSerializer
 
                     serializers.append(CBORSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-CBOR serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-CBOR serializer: {err}", err=e)
                 else:
                     sers.discard("cbor")
 
@@ -643,8 +643,8 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializer = MsgPackSerializer()
                     serializer._serializer.ENABLE_V5 = False  # FIXME
                     serializers.append(serializer)
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-MsgPack serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-MsgPack serializer: {err}", err=e)
                 else:
                     sers.discard("msgpack")
 
@@ -655,8 +655,8 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
 
                     serializers.append(UBJSONSerializer(batched=True))
                     serializers.append(UBJSONSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-UBJSON serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-UBJSON serializer: {err}", err=e)
                 else:
                     sers.discard("ubjson")
 
@@ -666,8 +666,8 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     from autobahn.wamp.serializer import JsonSerializer
 
                     serializers.append(JsonSerializer())
-                except ImportError:
-                    self.log.warn("Warning: could not load WAMP-JSON serializer")
+                except ImportError as e:
+                    self.log.warn("Warning: could not load WAMP-JSON serializer: {err}", err=e)
                 else:
                     sers.discard("json")
 
@@ -737,8 +737,8 @@ class WampRawSocketClientFactory(rawsocket.WampRawSocketClientFactory):
                 from autobahn.wamp.serializer import JsonSerializer
 
                 serializer = JsonSerializer()
-            except ImportError:
-                raise Exception("could not load WAMP-JSON serializer")
+            except ImportError as e:
+                raise Exception("could not load WAMP-JSON serializer") from e
 
         elif serid == "msgpack":
             # try MessagePack WAMP serializer
@@ -747,8 +747,8 @@ class WampRawSocketClientFactory(rawsocket.WampRawSocketClientFactory):
 
                 serializer = MsgPackSerializer()
                 serializer._serializer.ENABLE_V5 = False  # FIXME
-            except ImportError:
-                raise Exception("could not load WAMP-MessagePack serializer")
+            except ImportError as e:
+                raise Exception("could not load WAMP-MessagePack serializer") from e
 
         elif serid == "cbor":
             # try CBOR WAMP serializer
@@ -756,8 +756,8 @@ class WampRawSocketClientFactory(rawsocket.WampRawSocketClientFactory):
                 from autobahn.wamp.serializer import CBORSerializer
 
                 serializer = CBORSerializer()
-            except ImportError:
-                raise Exception("could not load WAMP-CBOR serializer")
+            except ImportError as e:
+                raise Exception("could not load WAMP-CBOR serializer") from e
 
         else:
             raise Exception("invalid WAMP serializer '{}'".format(serid))
