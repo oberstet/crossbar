@@ -250,7 +250,8 @@ class Versions(object):
         self.msgpack_ver = ""
         self.cbor_ver = ""
         self.ubjson_ver = ""
-        self.flatbuffers_ver = ""
+        self.flatbuffers_ver = ""  # FlatBuffers vendored in autobahn (data-in-transit)
+        self.flatbuffers_atrest_ver = ""  # FlatBuffers vendored in zlmdb (data-at-rest)
         self.lmdb_ver = ""
         self.crossbar_ver = ""
         self.numpy_ver = ""
@@ -284,6 +285,7 @@ class Versions(object):
         obj["cbor_ver"] = self.cbor_ver
         obj["ubjson_ver"] = self.ubjson_ver
         obj["flatbuffers_ver"] = self.flatbuffers_ver
+        obj["flatbuffers_atrest_ver"] = self.flatbuffers_atrest_ver
         obj["lmdb_ver"] = self.lmdb_ver
         obj["crossbar_ver"] = self.crossbar_ver
         obj["numpy_ver"] = self.numpy_ver
@@ -404,12 +406,15 @@ def _get_versions(reactor):
 
     v.supported_serializers = supported_serializers
 
-    # LMDB
+    # LMDB: the CFFI binding is vendored inside zlmdb; crossbar has no top-level
+    # "lmdb" dependency (and must not add one - it always goes through zlmdb), so
+    # read the version from the vendored binding instead of a top-level "lmdb"
+    # (which is absent on a clean install, leaving the line blank) - see #2156
     try:
-        import lmdb  # noqa
+        from zlmdb import lmdb as _lmdb  # noqa
 
-        lmdb_lib_ver = ".".join([str(x) for x in lmdb.version()])
-        v.lmdb_ver = "{}/lmdb-{}".format(_get_version(lmdb), lmdb_lib_ver)
+        lmdb_lib_ver = ".".join([str(x) for x in _lmdb.version()])
+        v.lmdb_ver = "{}/lmdb-{}".format(_get_version(_lmdb), lmdb_lib_ver)
     except ImportError:
         pass
 
@@ -421,11 +426,17 @@ def _get_versions(reactor):
     except ImportError:
         pass
 
-    # zlmdb
+    # zlmdb (data-at-rest), incl. the FlatBuffers it vendors. autobahn vendors
+    # FlatBuffers too (data-in-transit, reported above); both MUST be the same
+    # version, since crossbar uses both - reporting each lets an admin verify it.
     try:
         import zlmdb  # noqa
 
         v.zlmdb_ver = _get_version(zlmdb)
+
+        import zlmdb.flatbuffers  # noqa
+
+        v.flatbuffers_atrest_ver = "{}-{}".format(zlmdb.flatbuffers.__name__, _get_version(zlmdb.flatbuffers))
     except ImportError:
         pass
 
@@ -484,28 +495,36 @@ def _run_command_version(options, reactor, personality):
     for line in personality.BANNER.splitlines():
         log.info(hl(line, color="yellow", bold=True))
     log.info("")
-    log.info(" Crossbar.io        : {ver}", ver=decorate(v.crossbar_ver))
-    log.info("   txaio            : {ver}", ver=decorate(v.txaio_ver))
-    log.info("   Autobahn         : {ver}", ver=decorate(v.ab_ver))
-    log.info("     UTF8 Validator : {ver}", ver=decorate(v.utf8_ver))
-    log.info("     XOR Masker     : {ver}", ver=decorate(v.xor_ver))
-    log.info("     JSON Codec     : {ver}", ver=decorate(v.json_ver))
-    log.info("     MsgPack Codec  : {ver}", ver=decorate(v.msgpack_ver))
-    log.info("     CBOR Codec     : {ver}", ver=decorate(v.cbor_ver))
-    log.info("     UBJSON Codec   : {ver}", ver=decorate(v.ubjson_ver))
-    log.info("     FlatBuffers    : {ver}", ver=decorate(v.flatbuffers_ver))
-    log.info("   Twisted          : {ver}", ver=decorate(v.tx_ver))
-    log.info("   LMDB             : {ver}", ver=decorate(v.lmdb_ver))
-    log.info("   Python           : {ver}/{impl}", ver=decorate(v.py_ver), impl=decorate(v.py_ver_detail))
-    log.info("   PIP              : {ver}", ver=decorate(v.pip_ver))
-    log.info("   NumPy            : {ver}", ver=decorate(v.numpy_ver))
-    log.info("   zLMDB            : {ver}", ver=decorate(v.zlmdb_ver))
-    log.info("   CFXDB            : {ver}", ver=decorate(v.cfxdb_ver))
-    log.info("   XBR              : {ver}", ver=decorate(v.xbr_ver))
-    log.info(" Frozen executable  : {py_is_frozen}", py_is_frozen=decorate("yes" if v.py_is_frozen else "no"))
-    log.info(" Operating system   : {ver}", ver=decorate(v.platform))
-    log.info(" Host machine       : {ver}", ver=decorate(v.machine))
-    log.info(" Release key        : {release_pubkey}", release_pubkey=decorate(v.release_pubkey))
+    # nested version table; labels are padded to a fixed column so the values
+    # line up vertically (width sized to fit the longest label below). The tree
+    # mirrors the actual code structure: FlatBuffers appears once under Autobahn
+    # (data-in-transit) and once under zLMDB (data-at-rest); LMDB sits under zLMDB.
+    def vline(label, value):
+        log.info("{label}: {value}", label=label.ljust(30), value=value)
+
+    vline(" Crossbar.io", decorate(v.crossbar_ver))
+    vline("   txaio", decorate(v.txaio_ver))
+    vline("   Autobahn", decorate(v.ab_ver))
+    vline("     UTF8 Validator", decorate(v.utf8_ver))
+    vline("     XOR Masker", decorate(v.xor_ver))
+    vline("     JSON Codec", decorate(v.json_ver))
+    vline("     MsgPack Codec", decorate(v.msgpack_ver))
+    vline("     CBOR Codec", decorate(v.cbor_ver))
+    vline("     UBJSON Codec", decorate(v.ubjson_ver))
+    vline("     FlatBuffers (in-transit)", decorate(v.flatbuffers_ver))
+    vline("   Twisted", decorate(v.tx_ver))
+    vline("   Python", "{}/{}".format(decorate(v.py_ver), decorate(v.py_ver_detail)))
+    vline("   PIP", decorate(v.pip_ver))
+    vline("   NumPy", decorate(v.numpy_ver))
+    vline("   zLMDB", decorate(v.zlmdb_ver))
+    vline("     LMDB", decorate(v.lmdb_ver))
+    vline("     FlatBuffers (at-rest)", decorate(v.flatbuffers_atrest_ver))
+    vline("   CFXDB", decorate(v.cfxdb_ver))
+    vline("   XBR", decorate(v.xbr_ver))
+    vline(" Frozen executable", decorate("yes" if v.py_is_frozen else "no"))
+    vline(" Operating system", decorate(v.platform))
+    vline(" Host machine", decorate(v.machine))
+    vline(" Release key", decorate(v.release_pubkey))
     log.info("")
 
 
