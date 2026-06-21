@@ -19,8 +19,15 @@ from autobahn.wamp.serializer import (
     CBORObjectSerializer,
     JsonObjectSerializer,
     MsgPackObjectSerializer,
-    UBJSONObjectSerializer,
 )
+
+# The UBJSON serializer is backed by bjdata, an OPTIONAL, CPython-only autobahn
+# dependency (unavailable on PyPy - see autobahn wamp.serializer). Import it
+# defensively, mirroring the other optional-UBJSON call sites in crossbar.
+try:
+    from autobahn.wamp.serializer import UBJSONObjectSerializer
+except ImportError:
+    UBJSONObjectSerializer = None
 from autobahn.wamp.types import TransportDetails
 from autobahn.websocket.utf8validator import Utf8Validator
 from pytrie import StringTrie
@@ -478,8 +485,10 @@ class WampMQTTServerFactory(Factory):
         "json": JsonObjectSerializer(),
         "msgpack": MsgPackObjectSerializer(),
         "cbor": CBORObjectSerializer(),
-        "ubjson": UBJSONObjectSerializer(),
     }
+    # UBJSON is optional (bjdata is CPython-only, absent on PyPy)
+    if UBJSONObjectSerializer is not None:
+        serializers["ubjson"] = UBJSONObjectSerializer()
 
     def __init__(self, router_session_factory, config, reactor):
         self._router_session_factory = router_session_factory

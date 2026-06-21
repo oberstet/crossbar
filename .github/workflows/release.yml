@@ -22,6 +22,7 @@ jobs:
     outputs:
       main_run_id: ${{ steps.check.outputs.main_run_id }}
       should_proceed: ${{ steps.check.outputs.should_proceed }}
+      artifact_dist: ${{ steps.check.outputs.artifact_dist }}
 
     steps:
       - name: Check main workflow completion
@@ -59,6 +60,24 @@ jobs:
             console.log(`Main workflow: ${status}`);
             console.log('');
 
+            // Find the verified distribution artifact (name carries a checksum suffix)
+            let artifactDist = '';
+            if (mainComplete && mainRun) {
+              const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: mainRun.id
+              });
+
+              const distArtifact = artifacts.artifacts.find(a => a.name.startsWith('dist-packages-'));
+              if (distArtifact) {
+                artifactDist = distArtifact.name;
+                console.log(`Found artifact: ${artifactDist}`);
+              } else {
+                console.log('⚠️  No dist-packages artifact found');
+              }
+            }
+
             if (!mainComplete) {
               console.log('⏳ Main workflow not complete yet - exiting early');
               console.log('   This is normal! Release will proceed once main workflow finishes.');
@@ -69,6 +88,7 @@ jobs:
 
             core.setOutput('should_proceed', mainComplete ? 'true' : 'false');
             core.setOutput('main_run_id', mainRun?.id || '');
+            core.setOutput('artifact_dist', artifactDist);
 
   identifiers:
     name: Identifiers
@@ -105,29 +125,19 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      # Chain of custody: publish the EXACT artifacts that main.yml built,
+      # tested and verified (download-artifact-verified re-checks checksums),
+      # instead of rebuilding here. See issue #2224.
+      - name: Download distribution artifacts (verified)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-main-workflow.outputs.artifact_dist }}
+          path: dist
+          run-id: ${{ needs.check-main-workflow.outputs.main_run_id }}
 
-      - name: Set up Python 3.11
-        run: uv python install 3.11
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Create venv and install build tools
+      - name: List downloaded packages
         run: |
-          just create cpy311
-          just install-build-tools cpy311
-
-      - name: Build distribution packages
-        run: just dist cpy311
-
-      - name: Verify packages
-        run: just verify-dist cpy311
-
-      - name: List built packages
-        run: |
-          echo "Built packages:"
+          echo "Downloaded packages:"
           ls -lh dist/
 
       - name: Validate and prepare release fileset for GitHub
@@ -169,7 +179,6 @@ jobs:
           files: dist/*
           draft: false
           prerelease: true
-          discussion_category_name: ci-cd
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -200,29 +209,19 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      # Chain of custody: publish the EXACT artifacts that main.yml built,
+      # tested and verified (download-artifact-verified re-checks checksums),
+      # instead of rebuilding here. See issue #2224.
+      - name: Download distribution artifacts (verified)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-main-workflow.outputs.artifact_dist }}
+          path: dist
+          run-id: ${{ needs.check-main-workflow.outputs.main_run_id }}
 
-      - name: Set up Python 3.11
-        run: uv python install 3.11
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Create venv and install build tools
+      - name: List downloaded packages
         run: |
-          just create cpy311
-          just install-build-tools cpy311
-
-      - name: Build distribution packages
-        run: just dist cpy311
-
-      - name: Verify packages
-        run: just verify-dist cpy311
-
-      - name: List built packages
-        run: |
-          echo "Built packages:"
+          echo "Downloaded packages:"
           ls -lh dist/
 
       - name: Validate and prepare release fileset for GitHub
@@ -283,7 +282,6 @@ jobs:
           files: dist/*
           draft: false
           prerelease: false
-          discussion_category_name: ci-cd
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

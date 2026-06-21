@@ -324,7 +324,7 @@ prep-release:
     @echo '   3. Git tag:                  git tag -a v<VERSION> -m "tagged stable release"'
     @echo '   4. Git push tag:             git push upstream v<VERSION>'
     @echo '   5. Bump to new dev version:  just bump-next <NEXT-VERSION>.dev1'
-    @echo '   6. Create a new rel key:     signify-openbsd -G -c "Crossbar.io 26.1" -p src/crossbar/common/keys/crossbar-26-1.pub -s crossbar-26-1.sec'
+    @echo '   6. Create a new rel key:     signify-openbsd -G -c "Crossbar.io 26.6" -p src/crossbar/common/keys/crossbar-26-6.pub -s crossbar-26-6.sec'
     @echo '   7. Test rel key:             crossbar version'
     @echo ''
     @echo 'For rel key: this must be done (incl. *.sec key handling) by maintainer!'
