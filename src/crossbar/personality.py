@@ -14,6 +14,7 @@ import txaio
 txaio.use_twisted()
 
 import crossbar
+from crossbar._codename import get_codename_suffix
 from crossbar.common import checkconfig
 from crossbar.interfaces import IInventory, IRealmStore
 from crossbar.node import node
@@ -208,7 +209,7 @@ _BANNER = r"""
     :::::::   :::::::  / /__/ __/ _ \(_-<(_-</ _ \/ _ `/ __/ / / _ \
     :::::   :   :::::  \___/_/  \___/___/___/_.__/\_,_/_/ (_)_/\___/
           :::::
-    :::::::::::::::::   {title} v{version} [{build}]
+    :::::::::::::::::   {title} v{version}{codename} [{build}]
 
     Copyright (c) 2013-{year} typedef int GmbH. Licensed under EUPLv1.2.
 """
@@ -234,7 +235,11 @@ class Personality(object):
     DESC = _DESC
 
     BANNER = _BANNER.format(
-        title=_TITLE, version=crossbar.__version__, build=crossbar.__build__, year=time.strftime("%Y")
+        title=_TITLE,
+        version=crossbar.__version__,
+        codename=get_codename_suffix(crossbar.__version__),
+        build=crossbar.__build__,
+        year=time.strftime("%Y"),
     )
 
     LICENSE = ("crossbar", "LICENSE")

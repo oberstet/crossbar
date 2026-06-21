@@ -8,6 +8,8 @@ Changelog
 26.6.1
 ------
 
+* new: per-release codenames (e.g. Crossbar.io 26.6.1 — "Resistance Is Futile"), shown in the ``crossbar version`` banner (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
+* fix: use an absolute path for the verified artifact download in ``release.yml`` so the development/production release jobs find ``dist/`` (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
 * new: coordinated WAMP **26.6.x release train** — pin the coordinated dependency floor: ``autobahn>=26.6.2`` (cryptosign import fix), ``txaio>=26.6.1``, ``zlmdb>=26.6.1``, ``cfxdb>=26.6.1``, ``xbr>=26.6.1`` (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
 * new: track the application ``uv.lock`` for reproducible builds (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
 * new: Crossbar.io 26.6 release key (``crossbar-26-6.pub``)
