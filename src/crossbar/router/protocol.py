@@ -417,6 +417,11 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
             sers = set(config["serializers"])
 
             if "flatbuffers" in sers:
+                # a recognized serializer is consumed here whether or not it can
+                # actually be loaded; remaining (unconsumed) names are reported as
+                # invalid below. an optional serializer that is unavailable on the
+                # running interpreter (e.g. UBJSON on PyPy) is skipped gracefully.
+                sers.discard("flatbuffers")
                 # try FlatBuffers WAMP serializer
                 try:
                     from autobahn.wamp.serializer import FlatBuffersSerializer
@@ -425,10 +430,9 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
                     serializers.append(FlatBuffersSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-FlatBuffers serializer: {err}", err=e)
-                else:
-                    sers.discard("flatbuffers")
 
             if "cbor" in sers:
+                sers.discard("cbor")
                 # try CBOR WAMP serializer
                 try:
                     from autobahn.wamp.serializer import CBORSerializer
@@ -437,10 +441,9 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
                     serializers.append(CBORSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-CBOR serializer: {err}", err=e)
-                else:
-                    sers.discard("cbor")
 
             if "msgpack" in sers:
+                sers.discard("msgpack")
                 # try MsgPack WAMP serializer
                 try:
                     from autobahn.wamp.serializer import MsgPackSerializer
@@ -449,10 +452,9 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
                     serializers.append(MsgPackSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-MsgPack serializer: {err}", err=e)
-                else:
-                    sers.discard("msgpack")
 
             if "ubjson" in sers:
+                sers.discard("ubjson")
                 # try UBJSON WAMP serializer
                 try:
                     from autobahn.wamp.serializer import UBJSONSerializer
@@ -461,10 +463,9 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
                     serializers.append(UBJSONSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-UBJSON serializer: {err}", err=e)
-                else:
-                    sers.discard("ubjson")
 
             if "json" in sers:
+                sers.discard("json")
                 # try JSON WAMP serializer
                 try:
                     from autobahn.wamp.serializer import JsonSerializer
@@ -473,8 +474,6 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory):
                     serializers.append(JsonSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-JSON serializer: {err}", err=e)
-                else:
-                    sers.discard("json")
 
             if not serializers:
                 raise Exception("no valid WAMP serializers specified")
@@ -614,6 +613,11 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
             sers = set(config["serializers"])
 
             if "flatbuffers" in sers:
+                # a recognized serializer is consumed here whether or not it can
+                # actually be loaded; remaining (unconsumed) names are reported as
+                # invalid below. an optional serializer that is unavailable on the
+                # running interpreter (e.g. UBJSON on PyPy) is skipped gracefully.
+                sers.discard("flatbuffers")
                 # try FlatBuffers WAMP serializer
                 try:
                     from autobahn.wamp.serializer import FlatBuffersSerializer
@@ -621,10 +625,9 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializers.append(FlatBuffersSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-FlatBuffers serializer: {err}", err=e)
-                else:
-                    sers.discard("flatbuffers")
 
             if "cbor" in sers:
+                sers.discard("cbor")
                 # try CBOR WAMP serializer
                 try:
                     from autobahn.wamp.serializer import CBORSerializer
@@ -632,10 +635,9 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializers.append(CBORSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-CBOR serializer: {err}", err=e)
-                else:
-                    sers.discard("cbor")
 
             if "msgpack" in sers:
+                sers.discard("msgpack")
                 # try MsgPack WAMP serializer
                 try:
                     from autobahn.wamp.serializer import MsgPackSerializer
@@ -645,10 +647,9 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializers.append(serializer)
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-MsgPack serializer: {err}", err=e)
-                else:
-                    sers.discard("msgpack")
 
             if "ubjson" in sers:
+                sers.discard("ubjson")
                 # try UBJSON WAMP serializer
                 try:
                     from autobahn.wamp.serializer import UBJSONSerializer
@@ -657,10 +658,9 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializers.append(UBJSONSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-UBJSON serializer: {err}", err=e)
-                else:
-                    sers.discard("ubjson")
 
             if "json" in sers:
+                sers.discard("json")
                 # try JSON WAMP serializer
                 try:
                     from autobahn.wamp.serializer import JsonSerializer
@@ -668,8 +668,6 @@ class WampRawSocketServerFactory(rawsocket.WampRawSocketServerFactory):
                     serializers.append(JsonSerializer())
                 except ImportError as e:
                     self.log.warn("Warning: could not load WAMP-JSON serializer: {err}", err=e)
-                else:
-                    sers.discard("json")
 
             if not serializers:
                 raise Exception("no valid WAMP serializers specified")
