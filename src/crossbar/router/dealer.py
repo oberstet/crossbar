@@ -264,10 +264,16 @@ class Dealer(object):
                     invoke.timeout_call.cancel()
                     invoke.timeout_call = None
 
-                invokes = self._caller_to_invocations[invoke.caller]
-                invokes.remove(invoke)
-                if not invokes:
-                    del self._caller_to_invocations[invoke.caller]
+                # the caller may already have detached (e.g. after canceling
+                # this call), in which case its invocation tracking is already
+                # gone - guard the lookup so we still drop the registration
+                # observer below instead of aborting detach() with a KeyError
+                # and leaving a "zombie" registration behind (see #2187)
+                invokes = self._caller_to_invocations.get(invoke.caller)
+                if invokes is not None and invoke in invokes:
+                    invokes.remove(invoke)
+                    if not invokes:
+                        del self._caller_to_invocations[invoke.caller]
 
                 del self._invocations[invoke.id]
                 del self._invocations_by_call[(invoke.caller_session_id, invoke.call.request)]

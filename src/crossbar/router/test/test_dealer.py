@@ -275,6 +275,73 @@ class TestDealer(unittest.TestCase):
         interrupt_msg = last_message["1"]
         self.assertIsNone(interrupt_msg)
 
+    def test_callee_detach_after_canceled_call_and_caller_gone(self):
+        """
+        Regression test for #2187 ("silently swallowed RPC calls").
+
+        A canceled in-flight call whose callee does NOT support call canceling
+        leaves the invocation tracked (no INTERRUPT is sent for cancel mode
+        "skip"). If the caller then leaves, the canceled invocation is orphaned
+        on the callee side (its caller-side entry is removed, but the
+        callee-side entry is not). When the callee later detaches (e.g. an
+        ungraceful TCP drop), detach() must still cleanly drop the registration
+        observer - otherwise a "zombie" registration is left behind that
+        silently swallows (round-robin) RPC calls and is invisible to the
+        registration meta API.
+
+        Before the fix, detach() raised KeyError on the unguarded
+        ``self._caller_to_invocations[invoke.caller]`` lookup, aborting before
+        ``drop_observer()`` ran.
+        """
+        messages = []
+
+        def session_send(msg):
+            messages.append(msg)
+
+        # callee (e.g. a round-robin agent session) WITHOUT call-canceling support
+        callee = mock.Mock()
+        callee._transport.send = session_send
+        callee._session_roles = {"callee": role.RoleCalleeFeatures(call_canceling=False)}
+
+        # a DISTINCT caller (e.g. the API server session)
+        caller = mock.Mock()
+        caller._transport.send = session_send
+        caller._session_roles = {"caller": role.RoleCallerFeatures(call_canceling=True)}
+
+        dealer = self.router._dealer
+        dealer.attach(callee)
+        dealer.attach(caller)
+
+        def authorize(*args, **kwargs):
+            return defer.succeed({"allow": True, "disclose": False})
+
+        self.router.authorize = mock.Mock(side_effect=authorize)
+
+        # callee registers a shared (round-robin) procedure
+        dealer.processRegister(
+            callee, message.Register(1, "com.example.my.proc", "exact", message.Register.INVOKE_ROUNDROBIN, 1)
+        )
+        self.assertIsInstance(messages[-1], message.Registered)
+
+        # caller invokes -> in-flight invocation (caller is not the callee)
+        dealer.processCall(caller, message.Call(2, "com.example.my.proc", []))
+        self.assertIsInstance(messages[-1], message.Invocation)
+
+        # caller cancels with "skip": the invocation is marked canceled, but
+        # since the callee has no call-canceling support no INTERRUPT is sent
+        # and the invocation lingers tracked on both sides
+        dealer.processCancel(caller, message.Cancel(2, message.Cancel.SKIP))
+
+        # caller goes away first: the canceled invocation is orphaned onto the
+        # callee side
+        dealer.detach(caller)
+
+        # callee goes away (e.g. ungraceful TCP drop): this must cleanly
+        # deregister the callee, leaving no zombie registration behind
+        dealer.detach(callee)
+
+        self.assertNotIn(callee, dealer._session_to_registrations)
+
     def test_call_timeout_without_callee_support(self):
         messages = []
 
