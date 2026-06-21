@@ -404,12 +404,15 @@ def _get_versions(reactor):
 
     v.supported_serializers = supported_serializers
 
-    # LMDB
+    # LMDB: the CFFI binding is vendored inside zlmdb; crossbar has no top-level
+    # "lmdb" dependency (and must not add one - it always goes through zlmdb), so
+    # read the version from the vendored binding instead of a top-level "lmdb"
+    # (which is absent on a clean install, leaving the line blank) - see #2156
     try:
-        import lmdb  # noqa
+        from zlmdb import lmdb as _lmdb  # noqa
 
-        lmdb_lib_ver = ".".join([str(x) for x in lmdb.version()])
-        v.lmdb_ver = "{}/lmdb-{}".format(_get_version(lmdb), lmdb_lib_ver)
+        lmdb_lib_ver = ".".join([str(x) for x in _lmdb.version()])
+        v.lmdb_ver = "{}/lmdb-{}".format(_get_version(_lmdb), lmdb_lib_ver)
     except ImportError:
         pass
 
