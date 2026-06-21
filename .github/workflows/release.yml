@@ -132,18 +132,18 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-main-workflow.outputs.artifact_dist }}
-          path: dist
+          path: ${{ github.workspace }}/dist
           run-id: ${{ needs.check-main-workflow.outputs.main_run_id }}
 
       - name: List downloaded packages
         run: |
           echo "Downloaded packages:"
-          ls -lh dist/
+          ls -lh ${{ github.workspace }}/dist/
 
       - name: Validate and prepare release fileset for GitHub
         uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
         with:
-          distdir: dist
+          distdir: ${{ github.workspace }}/dist
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
@@ -216,18 +216,18 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-main-workflow.outputs.artifact_dist }}
-          path: dist
+          path: ${{ github.workspace }}/dist
           run-id: ${{ needs.check-main-workflow.outputs.main_run_id }}
 
       - name: List downloaded packages
         run: |
           echo "Downloaded packages:"
-          ls -lh dist/
+          ls -lh ${{ github.workspace }}/dist/
 
       - name: Validate and prepare release fileset for GitHub
         uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
         with:
-          distdir: dist
+          distdir: ${{ github.workspace }}/dist
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
@@ -288,7 +288,7 @@ jobs:
       - name: Validate and clean release fileset for PyPI
         uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
         with:
-          distdir: dist
+          distdir: ${{ github.workspace }}/dist
           mode: strict
           # keep-metadata: false (default - removes CHECKSUMS, build-info.txt etc for PyPI)
           targets: |

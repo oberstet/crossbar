@@ -326,8 +326,10 @@ prep-release:
     @echo '   5. Bump to new dev version:  just bump-next <NEXT-VERSION>.dev1'
     @echo '   6. Create a new rel key:     signify-openbsd -G -c "Crossbar.io 26.6" -p src/crossbar/common/keys/crossbar-26-6.pub -s crossbar-26-6.sec'
     @echo '   7. Test rel key:             crossbar version'
+    @echo '   8. Add release codename:     ensure src/crossbar/_codename.py has a codename for this year.month series'
     @echo ''
     @echo 'For rel key: this must be done (incl. *.sec key handling) by maintainer!'
+    @echo 'For codename: a stable release without a codename is rejected by the release gate (test_codename.py).'
     @echo ''
 
 # Auto-bump to next dev version based on current date (CalVer: YY.M.1.dev1)

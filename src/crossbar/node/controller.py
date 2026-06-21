@@ -28,6 +28,7 @@ from twisted.python.runtime import platform
 from txaio import get_global_log_level, make_logger
 
 import crossbar
+from crossbar._codename import get_codename_suffix
 from crossbar._util import class_name, hl, hlid, hltype, hlval, term_print
 from crossbar.common.checkconfig import (
     NODE_SHUTDOWN_ON_LAST_WORKER_EXIT,
@@ -197,7 +198,7 @@ class NodeController(NativeProcess):
             workers_by_type[worker.TYPE] += 1
 
         return {
-            "title": "{} {}".format(self.personality.TITLE, crossbar.__version__),
+            "title": "{} {}{}".format(self.personality.TITLE, crossbar.__version__, get_codename_suffix()),
             "started": self._started,
             "controller_pid": self._pid,
             "running_workers": len(self._workers),

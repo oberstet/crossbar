@@ -138,6 +138,41 @@ Command help: {executable} <command> --help
 """
 
 
+def _import_serializers_quietly():
+    """
+    Pre-import ``autobahn.wamp.serializer``, filtering the benign NumPy 1.x/2.x
+    ABI notice that bjdata's C extension prints to stderr.
+
+    Autobahn's optional UBJSON serializer is backed by ``bjdata`` (CPython-only).
+    bjdata ships sdist-only and builds its ``_bjdata`` C extension against
+    NumPy 1.x (via the deprecated ``oldest-supported-numpy``), so importing it
+    under NumPy 2.x prints a multi-line "compiled using NumPy 1.x" notice to
+    stderr. It is harmless: only bjdata's (unused) NumPy-array path is affected;
+    UBJSON (de)serialization of WAMP payloads works. Importing the serializer
+    module once, early and quietly, keeps the notice out of the ``crossbar`` CLI
+    output - later imports hit the module cache and stay silent.
+
+    This is NOT caught by ``warnings.filterwarnings`` (NumPy writes directly to
+    stderr), hence the stderr redirect.
+
+    TODO: remove this shim once bjdata builds against NumPy 2.x / ships wheels.
+    Upstream: https://github.com/NeuroJSON/pybj
+    """
+    import contextlib
+    import io
+
+    captured = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(captured):
+            import autobahn.wamp.serializer  # noqa: F401
+    finally:
+        # re-emit anything that is NOT the known benign NumPy 1.x/2.x notice,
+        # so we never silently swallow unexpected output from this import
+        text = captured.getvalue()
+        if text and "compiled using NumPy 1.x" not in text:
+            sys.stderr.write(text)
+
+
 def run():
     """
      CLI entry point into crossbar.
@@ -300,6 +335,10 @@ def run():
         reactor = install_reactor(
             explicit_reactor=os.environ.get("CROSSBAR_REACTOR", None), verbose=False, require_optimal_reactor=False
         )
+
+        # quietly pre-import the WAMP serializers before the personality import
+        # chain pulls them in, to filter bjdata's benign NumPy 1.x/2.x notice
+        _import_serializers_quietly()
 
         # get chosen personality class
         if command == "standalone":
