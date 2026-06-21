@@ -8,6 +8,7 @@ Changelog
 26.6.1
 ------
 
+* docs: document the test-driven Bug Fix Workflow and the PR AI-assistance disclosure (audit file) requirement in ``CONTRIBUTING.md``; refresh stale ``tox`` references to ``just`` (`#2152 <https://github.com/crossbario/crossbar/issues/2152>`_)
 * fix: ``crossbar version`` now reports the LMDB version from the binding vendored in zlmdb (the line was blank on clean installs, which have no top-level ``lmdb``); LMDB is now shown nested under zLMDB (`#2156 <https://github.com/crossbario/crossbar/issues/2156>`_)
 * new: ``crossbar version`` reports the vendored FlatBuffers version for both data-in-transit (autobahn) and data-at-rest (zlmdb), nested under their respective packages, so an admin can verify which version is active and that both agree (`#2156 <https://github.com/crossbario/crossbar/issues/2156>`_)
 * new: per-release codenames (e.g. Crossbar.io 26.6.1 — "Resistance Is Futile"), shown in the ``crossbar version`` banner (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
