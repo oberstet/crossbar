@@ -9,6 +9,7 @@ Changelog
 ------
 
 * new: per-release codenames (e.g. Crossbar.io 26.6.1 — "Resistance Is Futile"), shown in the ``crossbar version`` banner (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
+* fix: filter the benign NumPy 1.x/2.x ABI notice printed by bjdata's C extension (autobahn's UBJSON backend) under NumPy 2.x, so it no longer pollutes ``crossbar`` CLI output (short-term shim until bjdata ships a NumPy 2.x build) (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
 * fix: use an absolute path for the verified artifact download in ``release.yml`` so the development/production release jobs find ``dist/`` (`#2227 <https://github.com/crossbario/crossbar/issues/2227>`_)
 * new: coordinated WAMP **26.6.x release train** — pin the coordinated dependency floor: ``autobahn>=26.6.2`` (cryptosign import fix), ``txaio>=26.6.1``, ``zlmdb>=26.6.1``, ``cfxdb>=26.6.1``, ``xbr>=26.6.1`` (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
 * new: track the application ``uv.lock`` for reproducible builds (`#2224 <https://github.com/crossbario/crossbar/issues/2224>`_)
