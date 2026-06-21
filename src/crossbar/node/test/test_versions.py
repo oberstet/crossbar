@@ -41,3 +41,20 @@ class TestVersions(unittest.TestCase):
         v = _get_versions(reactor)
 
         self.assertTrue(v.zlmdb_ver, "zlmdb version is empty")
+
+    def test_flatbuffers_versions_reported(self):
+        """
+        FlatBuffers is vendored in BOTH autobahn (data-in-transit) and zlmdb
+        (data-at-rest); crossbar uses both, so `crossbar version` must report
+        each so an admin can verify which version is active and that they agree.
+        See #2156.
+        """
+        from twisted.internet import reactor
+
+        v = _get_versions(reactor)
+
+        self.assertTrue(v.flatbuffers_ver, "in-transit FlatBuffers version is empty")
+        self.assertIn("autobahn.flatbuffers", v.flatbuffers_ver)
+
+        self.assertTrue(v.flatbuffers_atrest_ver, "at-rest FlatBuffers version is empty")
+        self.assertIn("zlmdb.flatbuffers", v.flatbuffers_atrest_ver)
