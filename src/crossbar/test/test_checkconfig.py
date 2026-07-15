@@ -216,6 +216,76 @@ class CheckWebsocketTests(TestCase):
 
         self.assertTrue("'auto_ping_timeout' is in milliseconds" in str(ctx.exception))
 
+    #
+    # WebSocket compression options (#2250). check_websocket_compression() was an
+    # empty stub, so malformed compression config was silently accepted. The
+    # permissible deflate values mirror autobahn's PerMessageDeflateMixin:
+    # window bits 9..15 (plus 0 = "not requested" for request_max_window_bits)
+    # and memory level 1..9.
+    #
+
+    def test_compression_must_be_dict(self):
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": "nope"}})
+        self.assertIn("deflate", str(ctx.exception))
+
+    def test_compression_unknown_codec(self):
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"bogus": {}}})
+        self.assertIn("bogus", str(ctx.exception))
+
+    def test_compression_deflate_unknown_attribute(self):
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": {"bogus": 1}}})
+        self.assertIn("bogus", str(ctx.exception))
+
+    def test_compression_deflate_bad_attribute_type(self):
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": {"no_context_takeover": "yes"}}})
+        self.assertIn("no_context_takeover", str(ctx.exception))
+
+    def test_compression_deflate_bad_max_window_bits(self):
+        # 8 is not a permissible deflate window size (9..15)
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": {"max_window_bits": 8}}})
+        self.assertIn("max_window_bits", str(ctx.exception))
+
+    def test_compression_deflate_bad_request_max_window_bits(self):
+        # 16 is out of range; 0 ("not requested") and 9..15 are the valid values
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": {"request_max_window_bits": 16}}})
+        self.assertIn("request_max_window_bits", str(ctx.exception))
+
+    def test_compression_deflate_bad_memory_level(self):
+        # 10 is out of range (1..9)
+        with self.assertRaises(checkconfig.InvalidConfigException) as ctx:
+            checkconfig.check_websocket_options({"compression": {"deflate": {"memory_level": 10}}})
+        self.assertIn("memory_level", str(ctx.exception))
+
+    def test_compression_deflate_valid(self):
+        # a fully-specified, valid deflate block is accepted
+        checkconfig.check_websocket_options(
+            {
+                "compression": {
+                    "deflate": {
+                        "request_no_context_takeover": True,
+                        "request_max_window_bits": 11,
+                        "no_context_takeover": False,
+                        "max_window_bits": 15,
+                        "memory_level": 4,
+                    }
+                }
+            }
+        )
+
+    def test_compression_deflate_request_max_window_bits_zero(self):
+        # 0 means "do not request a window size" and must be accepted
+        checkconfig.check_websocket_options({"compression": {"deflate": {"request_max_window_bits": 0}}})
+
+    def test_compression_deflate_empty(self):
+        # an empty deflate block (all defaults) is valid
+        checkconfig.check_websocket_options({"compression": {"deflate": {}}})
+
 
 class CheckRealmTests(TestCase):
     """
