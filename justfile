@@ -599,6 +599,8 @@ check-typing venv="":
         --ignore invalid-await \
         --ignore invalid-super-argument \
         --ignore invalid-exception-caught \
+        --ignore possibly-missing-submodule \
+        --ignore unused-type-ignore-comment \
         --exclude 'src/crossbar/worker/test/examples/syntaxerror.py' \
         src/crossbar/
 
