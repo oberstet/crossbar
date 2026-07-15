@@ -27,6 +27,7 @@ from autobahn.wamp.message import (
     identify_realm_name_category,
 )
 from autobahn.wamp.uri import convert_starred_uri
+from autobahn.websocket.compress_deflate import PerMessageDeflateMixin
 from autobahn.websocket.util import parse_url
 from yaml import Dumper, Loader, SafeDumper, SafeLoader
 from yaml.constructor import ConstructorError
@@ -1594,10 +1595,56 @@ def check_websocket_compression(options):
     """
     Check options for WebSocket compression.
 
+    Only ``permessage-deflate`` is implemented (see
+    ``crossbar.router.protocol.set_websocket_options``). The permissible values
+    for the deflate parameters are taken from the WebSocket compression
+    implementation in autobahn, so this validator cannot drift from what is
+    actually accepted at run-time.
+
     http://crossbar.io/docs/
     https://github.com/crossbario/crossbar/blob/master/docs/pages/administration/router/transport/WebSocket-Compression.md
+
+    :param options: The options to check.
+    :type options: dict
     """
-    # FIXME
+    check_dict_args({"deflate": (False, [Mapping])}, options, "WebSocket compression options")
+
+    if "deflate" in options:
+        deflate = options["deflate"]
+
+        check_dict_args(
+            {
+                "request_no_context_takeover": (False, [bool]),
+                "request_max_window_bits": (False, [int]),
+                "no_context_takeover": (False, [bool]),
+                "max_window_bits": (False, [int]),
+                "memory_level": (False, [int]),
+            },
+            deflate,
+            "WebSocket permessage-deflate compression options",
+        )
+
+        for k in ["max_window_bits", "request_max_window_bits"]:
+            if k in deflate:
+                val = deflate[k]
+                # 0 on request_max_window_bits means "do not request a window size"
+                if k == "request_max_window_bits" and val == 0:
+                    continue
+                if val not in PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES:
+                    raise InvalidConfigException(
+                        "invalid value {} for '{}' in WebSocket permessage-deflate options - permissible values {}".format(
+                            val, k, PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES
+                        )
+                    )
+
+        if "memory_level" in deflate:
+            val = deflate["memory_level"]
+            if val not in PerMessageDeflateMixin.MEM_LEVEL_PERMISSIBLE_VALUES:
+                raise InvalidConfigException(
+                    "invalid value {} for 'memory_level' in WebSocket permessage-deflate options - permissible values {}".format(
+                        val, PerMessageDeflateMixin.MEM_LEVEL_PERMISSIBLE_VALUES
+                    )
+                )
 
 
 def check_web_path_service_websocket_reverseproxy(personality, config):
