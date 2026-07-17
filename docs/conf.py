@@ -188,7 +188,7 @@ spelling_word_list_filename = "spelling_wordlist.txt"
 spelling_show_suggestions = True
 
 # -- OpenGraph (Social Media Meta Tags) -------------------------------------
-ogp_site_url = "https://crossbar.readthedocs.io/en/latest/"
+ogp_site_url = "https://crossbario.readthedocs.io/en/latest/"
 
 # -- Auto Section Anchors Configuration --------------------------------------
 # Force overwrite of auto-generated ids (id1, id2, etc.) with slug-based anchors

@@ -9,8 +9,8 @@ WAMP Router for Distributed & Decentralized Microservices
    :target: https://pypi.python.org/pypi/crossbar
 .. |CI| image:: https://github.com/crossbario/crossbar/workflows/main/badge.svg
    :target: https://github.com/crossbario/crossbar/actions?query=workflow%3Amain
-.. |Docs| image:: https://readthedocs.org/projects/crossbar/badge/?version=latest
-   :target: https://crossbar.readthedocs.io/en/latest/
+.. |Docs| image:: https://readthedocs.org/projects/crossbario/badge/?version=latest
+   :target: https://crossbario.readthedocs.io/en/latest/
 .. |License| image:: https://img.shields.io/pypi/l/crossbar.svg
    :target: https://github.com/crossbario/crossbar/blob/master/LICENSE
 .. |Downloads| image:: https://img.shields.io/pypi/dm/crossbar.svg
