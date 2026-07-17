@@ -97,6 +97,22 @@ where
 -  ``memory_level``: while sending, limit memory consumption to this
    level. Permissible values are 1 .. 9 (default: **8**)
 
+Message Size and Decompression Bombs
+------------------------------------
+
+Compression is a double-edged sword: a small compressed frame can expand into a
+very large message once decompressed. A malicious or buggy client can abuse this
+— a *decompression bomb* — to make the router allocate far more memory than the
+wire traffic suggests.
+
+Guard against this with the transport's ``max_message_size`` option (see
+:doc:`WebSocket Options <WebSocket-Options>`). Crossbar.io enforces
+``max_message_size`` against the **decompressed** message size, so it bounds the
+memory a single message can consume regardless of its compression ratio — unlike
+``max_frame_size``, which only sees the (small) compressed frame on the wire.
+Whenever you enable permessage-deflate on a router-facing transport, set
+``max_message_size`` to the largest message your application legitimately needs.
+
 Production Settings
 -------------------
 

@@ -70,6 +70,13 @@ for RawSocket listening transports are:
 | debug              | Enable transport level debug output. (default: false)                                                                                                  |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+.. note::
+
+   ``max_message_size`` bounds a full (reassembled) RawSocket **message** — the
+   uncompressed, application-level payload handed to WAMP. RawSocket has no
+   compression layer, so unlike :doc:`WebSocket <WebSocket-Options>` there is no
+   separate on-the-wire vs. decompressed distinction for this limit.
+
 Connecting Transports
 ~~~~~~~~~~~~~~~~~~~~~
 Connecting transports are used with :doc:`containers <Container-Configuration>` to allow hosted components to
