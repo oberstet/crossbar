@@ -286,6 +286,28 @@ class CheckWebsocketTests(TestCase):
         # an empty deflate block (all defaults) is valid
         checkconfig.check_websocket_options({"compression": {"deflate": {}}})
 
+    #
+    # max_frame_size range validation (#2253). It was type-checked only, so a
+    # negative value was accepted — and autobahn only enforces frames with
+    # ``0 < maxFramePayloadSize < length``, so a negative value silently
+    # DISABLES the limit rather than tightening it.
+    #
+
+    def test_max_frame_size_negative_rejected(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_websocket_options({"max_frame_size": -1})
+
+    def test_max_frame_size_over_range_rejected(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_websocket_options({"max_frame_size": 64 * 1024 * 1024 + 1})
+
+    def test_max_frame_size_zero_allowed(self):
+        # 0 is the documented "unlimited" spelling
+        checkconfig.check_websocket_options({"max_frame_size": 0})
+
+    def test_max_frame_size_positive_allowed(self):
+        checkconfig.check_websocket_options({"max_frame_size": 65536})
+
 
 class CheckRealmTests(TestCase):
     """

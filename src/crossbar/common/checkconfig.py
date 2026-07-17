@@ -1031,6 +1031,31 @@ def check_transport_max_message_size(max_message_size):
         )
 
 
+def check_transport_max_frame_size(max_frame_size):
+    """
+    Check the ``max_frame_size`` parameter for a WebSocket transport.
+
+    This is the on-the-wire (compressed) per-frame limit; ``0`` means unlimited.
+    A negative value must be rejected: autobahn only enforces frames with
+    ``0 < maxFramePayloadSize < length``, so a negative value silently disables
+    the limit instead of tightening it (crossbar #2253). Upper bound is kept
+    consistent with the WebSocket ``max_message_size`` policy (64 MB).
+
+    :param max_frame_size: The maximum frame size parameter to check.
+    :type max_frame_size: int
+    """
+    if not isinstance(max_frame_size, int):
+        raise InvalidConfigException(
+            "'max_frame_size' attribute in transport must be int ({} encountered)".format(type(max_frame_size))
+        )
+    if max_frame_size < 0 or max_frame_size > 64 * 1024 * 1024:
+        raise InvalidConfigException(
+            "invalid value {} for 'max_frame_size' attribute in transport (must be from [0, 64MB], 0 = unlimited)".format(
+                max_frame_size
+            )
+        )
+
+
 # WAMP RawSocket negotiates its receive limit as a length exponent 2**(9+n),
 # n in [0, 15], so max_message_size must lie in [2**9, 2**24] = [512, 16 MB].
 # autobahn's WampRawSocketFactory.setProtocolOptions asserts exactly this, so a
@@ -1621,6 +1646,9 @@ def check_websocket_options(options):
 
     if "compression" in options:
         check_websocket_compression(options["compression"])
+
+    if "max_frame_size" in options:
+        check_transport_max_frame_size(options["max_frame_size"])
 
     if "max_message_size" in options:
         check_transport_max_message_size(options["max_message_size"])
