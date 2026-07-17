@@ -8,14 +8,12 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from autobahn.wamp import types
-from autobahn.twisted.component import Component, run
+from autobahn.twisted.component import Component
 from autobahn.twisted.util import sleep
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, \
     PerMessageDeflateResponseAccept
-from twisted.internet.defer import Deferred, FirstError, inlineCallbacks
-from twisted.python import log
-from os.path import join
+from twisted.internet.defer import Deferred, inlineCallbacks
 
 import pytest
 
@@ -25,100 +23,132 @@ from ..helpers import *
 from ..helpers import _create_temp, _cleanup_crossbar
 
 
+# The router transport dedicated to this test (see conftest.py,
+# "ws_test_zipbomb"): permessage-deflate is enabled ON THE ROUTER and
+# max_message_size is set to 1500 octets.
+#
+# Enabling deflate router-side is essential and was the bug in the previous
+# version of this test (#2250): it configured compression only on the *client*,
+# so the router declined the offers, nothing was ever compressed, and the
+# "zip bomb" travelled uncompressed. It then tripped max_frame_payload_size - an
+# unrelated, ordinary wire-size check - and the test passed without ever
+# exercising decompression at all.
+ZIPBOMB_URL = u"ws://localhost:6566/ws"
 
-@inlineCallbacks
-def test_deflate_lots(reactor, crossbar):
-    """
-    """
-    # XXX turning on Deflate seems .. hard
-    # XXX also, why do I have to specify max_... in at least 2 places?
+# The router's configured max_message_size (uncompressed / application level).
+ROUTER_MAX_MESSAGE_SIZE = 1500
 
-    # The extensions offered to the server ..
+# Deflates to a few dozen octets on the wire, but inflates to ~20k - i.e. tiny
+# compressed, far past ROUTER_MAX_MESSAGE_SIZE once inflated. This is the whole
+# point: the compressed frame is small enough that no frame-size check can fire,
+# so the only mechanism that can reject it is enforcement against the
+# UNCOMPRESSED reassembled size (autobahn-python #1909 / GHSA-hxp9-w8x3-p566).
+BOMB = u"a" * 20000
+
+# Comfortably under the cap - used as a control, to prove the transport works
+# and that having compression on does not break ordinary traffic.
+SMALL = u"a" * 20
+
+
+def _compressed_transport(url):
+    """
+    A client transport that offers permessage-deflate. The router must accept
+    the offer for anything to actually be compressed.
+    """
     offers = [PerMessageDeflateOffer()]
 
-    # Function to accept responses from the server ..
     def accept(response):
         if isinstance(response, PerMessageDeflateResponse):
-            return PerMessageDeflateResponseAccept(response, max_message_size=1500)
+            return PerMessageDeflateResponseAccept(response)
 
-    # we have two components here: one that has a limit on payloads
-    # (component0) and one that doesn't (component1). component0 subscribes
-    # and then component1 sends it one "small enough" and then one "too big"
-    # message (the second should cause component0 to drop its connection).
-    component0 = Component(
-        transports=[
-            {
-                u"url": u"ws://localhost:6565/ws",
-                u"options": {
-                    u"max_frame_payload_size": 1500,
-                    u"per_message_compression_offers": offers,
-                    u"per_message_compression_accept": accept,
-                }
-            },
-        ],
+    return {
+        u"url": url,
+        u"options": {
+            u"per_message_compression_offers": offers,
+            u"per_message_compression_accept": accept,
+        },
+    }
+
+
+@inlineCallbacks
+def test_router_rejects_zip_bomb(reactor, crossbar):
+    """
+    The ROUTER must reject a decompression bomb.
+
+    A client publishes a payload that is small on the wire but inflates far past
+    the router's configured max_message_size. The router must reject it (close
+    code 1009, MESSAGE_TOO_BIG) and drop that client's connection.
+
+    This asserts Crossbar's own guard - what operators configure
+    max_message_size for - rather than a client-side limit.
+
+    What makes this a *clean* assertion: the compressed frame is only a few
+    dozen octets, so no frame-size limit can possibly fire. The only mechanism
+    that can drop this connection is enforcement against the uncompressed
+    reassembled size. Verified to be a genuine regression test: against an
+    autobahn without that fix (< 26.7.1) the router checks the compressed size,
+    accepts the bomb and never drops, and this test fails.
+
+    NOTE (#2250): a client-side counterpart - subscriber bounds the decompressed
+    size itself, publisher sends a bomb through an uncapped router - was tried
+    and deliberately dropped. It cannot discriminate at this level: it passes
+    against both a fixed and an unfixed autobahn, because the connection drops
+    either way (cleanly via PayloadExceededError when fixed; via a zlib decode
+    error on truncated data when not). Telling those apart needs protocol-level
+    introspection the component API does not expose, and a test that passes
+    regardless of the fix is worse than none - it was exactly the flaw this
+    issue was filed about. That path is properly covered at unit level by
+    autobahn's PerMessageDeflateMaxMessageSizeTests (#1908), where the
+    distinction is observable.
+    """
+    component = Component(
+        transports=[_compressed_transport(ZIPBOMB_URL)],
         realm=u"functest_realm1",
     )
-    component1 = Component(
-        transports=[
-            {
-                u"url": u"ws://localhost:6565/ws",
-                u"options": {
-                    u"per_message_compression_offers": offers,
-                    u"per_message_compression_accept": accept,
-                }
-            },
-        ],
-        realm=u"functest_realm1",
-    )
 
-    listening = Deferred()  # component1 waits until component0 subscribes
-    connection_dropped = Deferred()  # we want component0 to do this
-    connections = [0]  # how many times component0 has connected
+    dropped = Deferred()
+    published_small = Deferred()
+    joins = [0]
 
-    @component0.on_join
+    @component.on_join
     @inlineCallbacks
-    def listen(session, details):
-        connections[0] += 1
-        if connections[0] == 2:
-            print("comp0: re-connected!")
-        elif connections[0] == 1:
-            # we await (potentially) two messages; if we get the second, the
-            # test should fail
-            messages = [Deferred(), Deferred()]
-            yield session.subscribe(lambda x: messages.pop(0).callback(x), u"foo")
-            listening.callback(None)
-            while len(messages):
-                msg = yield messages[0]
-                print("comp0: message: {}".format(msg))
-        print("comp0: done listening")
+    def go(session, details):
+        joins[0] += 1
+        if joins[0] > 1:
+            # the component reconnects after the router drops us; don't re-send
+            return
+        # control: a small message must go through fine
+        yield session.publish(
+            u"foo", SMALL, options=types.PublishOptions(acknowledge=True)
+        )
+        published_small.callback(None)
 
-    @component0.on_disconnect
+        # the bomb: the router must reject this on its uncompressed size. We may
+        # or may not get an error back here (the router aborts the connection),
+        # so failures are expected and swallowed - the assertion is the drop.
+        try:
+            yield session.publish(
+                u"foo", BOMB, options=types.PublishOptions(acknowledge=True)
+            )
+        except Exception:
+            pass
+
+    @component.on_disconnect
     def gone(session, was_clean=False):
-        print("comp0: session dropped".format(session, was_clean))
-        connection_dropped.callback(session)
+        if not dropped.called:
+            dropped.callback(was_clean)
 
-    @component1.on_join
-    @inlineCallbacks
-    def send(session, details):
-        yield listening
-        # this one should be small enough to go through
-        yield session.publish(u"foo", u"a" * 20, options=types.PublishOptions(acknowledge=True))
-
-        # this will definitely be over 1500 and should fail (due to the other
-        # side's decoder dropping it because the payload is too big). We can't
-        # get an error here because the router accepts it, but the other
-        # *client* will reject...
-        yield session.publish(u"foo", u"a" * 2000, options=types.PublishOptions(acknowledge=True))
-
-    # fail-safe if the test doesn't fail for some other reason, it'll fail
-    # after 15s
     timeout = sleep(15)
+    component.start(reactor)
+    yield DeferredList(
+        [timeout, dropped], fireOnOneErrback=True, fireOnOneCallback=True
+    )
 
-    done = DeferredList([
-        component0.start(reactor),
-        component1.start(reactor),
-    ])
-    yield DeferredList([timeout, done, connection_dropped], fireOnOneErrback=True, fireOnOneCallback=True)
-
+    assert published_small.called, "the small control message should have been accepted"
     assert not timeout.called, "shouldn't time out"
-    assert connection_dropped.called, "component0 should have dropped connection"
+    assert dropped.called, (
+        "the router should have dropped the connection: a message inflating to "
+        "{} octets exceeds the router's max_message_size of {}".format(
+            len(BOMB), ROUTER_MAX_MESSAGE_SIZE
+        )
+    )
