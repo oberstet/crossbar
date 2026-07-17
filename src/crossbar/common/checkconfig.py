@@ -1011,7 +1011,8 @@ def check_endpoint_timeout(timeout):
 
 def check_transport_max_message_size(max_message_size):
     """
-    Check the ``max_message_size`` parameter for a WebSocket transport ([1, 64MB]).
+    Check the ``max_message_size`` parameter for a WebSocket transport
+    ([0, 64MB], ``0`` = unlimited — the documented spelling).
 
     RawSocket has a narrower, protocol-imposed range and its own validator, see
     :func:`check_transport_rawsocket_max_message_size`.
@@ -1023,11 +1024,10 @@ def check_transport_max_message_size(max_message_size):
         raise InvalidConfigException(
             "'max_message_size' attribute in transport must be int ({} encountered)".format(type(max_message_size))
         )
-    if max_message_size < 1 or max_message_size > 64 * 1024 * 1024:
+    if max_message_size < 0 or max_message_size > 64 * 1024 * 1024:
         raise InvalidConfigException(
-            "invalid value {} for 'max_message_size' attribute in transport (must be from [1, 64MB])".format(
-                max_message_size
-            )
+            "invalid value {} for 'max_message_size' attribute in transport "
+            "(must be from [0, 64MB], 0 = unlimited)".format(max_message_size)
         )
 
 
