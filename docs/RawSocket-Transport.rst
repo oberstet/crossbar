@@ -63,7 +63,7 @@ for RawSocket listening transports are:
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+
 | serializers        | List of serializers to use from "json" or "msgpack" (default: all available)                                                                           |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+
-| max_message_size   | Maximum size in bytes of incoming RawSocket messages accepted. Must be between 1 and 64MB (default: 128kB)                                             |
+| max_message_size   | Maximum size in bytes of incoming (uncompressed) RawSocket messages accepted. Must be between 512 bytes and 16 MB (default: 16777216 = 16 MB)          |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+
 | auth               | Authentication to be used for this Endpoint - see :doc:`Authentication<Authentication>`                                                                |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+
