@@ -1011,7 +1011,10 @@ def check_endpoint_timeout(timeout):
 
 def check_transport_max_message_size(max_message_size):
     """
-    Check maximum message size parameter in RawSocket and WebSocket transports.
+    Check the ``max_message_size`` parameter for a WebSocket transport ([1, 64MB]).
+
+    RawSocket has a narrower, protocol-imposed range and its own validator, see
+    :func:`check_transport_rawsocket_max_message_size`.
 
     :param max_message_size: The maximum message size parameter to check.
     :type max_message_size: int
@@ -1023,6 +1026,38 @@ def check_transport_max_message_size(max_message_size):
     if max_message_size < 1 or max_message_size > 64 * 1024 * 1024:
         raise InvalidConfigException(
             "invalid value {} for 'max_message_size' attribute in transport (must be from [1, 64MB])".format(
+                max_message_size
+            )
+        )
+
+
+# WAMP RawSocket negotiates its receive limit as a length exponent 2**(9+n),
+# n in [0, 15], so max_message_size must lie in [2**9, 2**24] = [512, 16 MB].
+# autobahn's WampRawSocketFactory.setProtocolOptions asserts exactly this, so a
+# value outside the range passes config validation but raises AssertionError at
+# transport start. WebSocket has no such protocol cap. (crossbar #2252)
+RAWSOCKET_MAX_MESSAGE_SIZE_MIN = 2**9  # 512 octets
+RAWSOCKET_MAX_MESSAGE_SIZE_MAX = 2**24  # 16 MB
+
+
+def check_transport_rawsocket_max_message_size(max_message_size):
+    """
+    Check the ``max_message_size`` parameter for a RawSocket transport.
+
+    Unlike WebSocket, WAMP RawSocket bounds this to [512, 16MB] by protocol.
+
+    :param max_message_size: The maximum message size parameter to check.
+    :type max_message_size: int
+    """
+    if not isinstance(max_message_size, int):
+        raise InvalidConfigException(
+            "'max_message_size' attribute in RawSocket transport must be int ({} encountered)".format(
+                type(max_message_size)
+            )
+        )
+    if max_message_size < RAWSOCKET_MAX_MESSAGE_SIZE_MIN or max_message_size > RAWSOCKET_MAX_MESSAGE_SIZE_MAX:
+        raise InvalidConfigException(
+            "invalid value {} for 'max_message_size' attribute in RawSocket transport (must be from [512, 16MB])".format(
                 max_message_size
             )
         )
@@ -1486,7 +1521,7 @@ def check_rawsocket_options(options):
     )
 
     if "max_message_size" in options:
-        check_transport_max_message_size(options["max_message_size"])
+        check_transport_rawsocket_max_message_size(options["max_message_size"])
 
 
 def check_websocket_options(options):
