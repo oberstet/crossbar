@@ -325,6 +325,33 @@ def crossbar(reactor, request, virtualenv, session_temp):
                             "type": "tcp",
                             "port": 6564,
                         },
+                    },
+                    {
+                        # Dedicated transport for the decompression-bomb functest
+                        # (test_cb_zip_bomb.py). Separate from ws_test_0 so the
+                        # compression/size options do not affect every other
+                        # functest sharing this session-scoped fixture.
+                        #
+                        # permessage-deflate MUST be enabled here on the ROUTER:
+                        # without it the router declines the client's offers and
+                        # nothing is ever compressed, so no zip bomb is possible.
+                        #
+                        # max_message_size is the UNCOMPRESSED (application-level)
+                        # cap - the actual zip-bomb guard - and is set explicitly
+                        # so this test does not depend on the default.
+                        "type": "websocket",
+                        "id": "ws_test_zipbomb",
+                        "endpoint": {
+                            "type": "tcp",
+                            "port": 6566,
+                        },
+                        "url": u"ws://localhost:6566/ws",
+                        "options": {
+                            "compression": {
+                                "deflate": {}
+                            },
+                            "max_message_size": 1500,
+                        },
                     }
                 ],
             }

@@ -90,6 +90,27 @@ The available options are:
 |                                 | If this option is set to false, Crossbar.io will no longer require the client to announce subprotocols and assume wamp.2.json when no WebSocket subprotocol is announced. (default: true)              |
 +---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+Frame and Message Size Limits
+-----------------------------
+
+``max_frame_size`` and ``max_message_size`` bound two different things, and the
+distinction matters once :doc:`WebSocket compression <WebSocket-Compression>`
+(permessage-deflate) is enabled:
+
+-  ``max_frame_size`` limits a single incoming WebSocket **frame** as it appears
+   **on the wire** — i.e. the *compressed* bytes when compression is active. It
+   is a coarse, transport-level guard.
+-  ``max_message_size`` limits a full incoming WebSocket **message** after it has
+   been **reassembled from its frames and decompressed** — i.e. the
+   *uncompressed*, application-level size that is actually handed to WAMP.
+
+Because permessage-deflate can inflate a tiny compressed frame into a very large
+message, ``max_frame_size`` alone cannot bound memory use: only
+``max_message_size``, enforced against the *decompressed* size, protects against
+decompression ("zip") bombs. Whenever you enable compression on a router-facing
+transport, set ``max_message_size`` to the largest message your application
+legitimately needs — see :doc:`WebSocket Compression <WebSocket-Compression>`.
+
 Production Settings
 -------------------
 

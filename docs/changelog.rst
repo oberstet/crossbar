@@ -5,6 +5,14 @@
 Changelog
 =========
 
+26.7.1
+------
+
+* new: coordinated WAMP **26.7.1 release train** — pin ``autobahn>=26.7.1`` for the WebSocket permessage-deflate decompression-bomb fix (advisory ``GHSA-hxp9-w8x3-p566``) and relock ``uv.lock`` to the coordinated set (autobahn 26.7.1, zlmdb 26.7.1); ``cfxdb`` and ``txaio`` remain at 26.6.1 (`#2250 <https://github.com/crossbario/crossbar/issues/2250>`_)
+* fix: validate WebSocket ``compression`` transport configuration. ``check_websocket_compression()`` was an empty stub yet wired into ``check_websocket_options()``, so unknown codecs, unknown or mis-typed deflate attributes and out-of-range ``request_max_window_bits`` / ``max_window_bits`` / ``memory_level`` were all silently accepted and only surfaced (if at all) as a run-time error deep inside the compression backend (`#2250 <https://github.com/crossbario/crossbar/issues/2250>`_)
+* new: functional test asserting the router rejects a decompression ("zip") bomb — a payload tiny on the wire but inflating far past the transport's ``max_message_size`` — on its *uncompressed* reassembled size (close code 1009). Verified a genuine regression test: it fails against autobahn < 26.7.1 and passes against 26.7.1 (`#2250 <https://github.com/crossbario/crossbar/issues/2250>`_)
+* docs: clarify the ``max_frame_size`` (on-the-wire, per-frame) versus ``max_message_size`` (reassembled and decompressed, per-message) semantics on the WebSocket and RawSocket transports, and document ``max_message_size`` as the decompression-bomb guard in the WebSocket Compression docs (`#2250 <https://github.com/crossbario/crossbar/issues/2250>`_)
+
 26.6.1
 ------
 
