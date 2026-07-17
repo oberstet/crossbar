@@ -456,3 +456,42 @@ class CheckOnion(TestCase):
             )
         self.assertIn("invalid type", str(ctx.exception))
         self.assertIn("encountered for attribute 'port'", str(ctx.exception))
+
+
+class CheckRawsocketTests(TestCase):
+    """
+    RawSocket ``max_message_size`` must be validated over the range the WAMP
+    RawSocket protocol can actually negotiate — [512, 16 MB] — not the wider
+    [1, 64 MB] shared with WebSocket. A value in the gap passes ``crossbar
+    check`` but then makes autobahn's factory ``AssertionError`` at transport
+    start (crossbar #2252).
+    """
+
+    def test_rejects_below_512(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_rawsocket_options({"max_message_size": 100})
+
+    def test_rejects_just_below_512(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_rawsocket_options({"max_message_size": 511})
+
+    def test_rejects_above_16mb(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_rawsocket_options({"max_message_size": 32000000})
+
+    def test_rejects_just_above_16mb(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_rawsocket_options({"max_message_size": 2**24 + 1})
+
+    def test_accepts_min_512(self):
+        # boundary: exactly the RawSocket minimum (2**9) is valid
+        checkconfig.check_rawsocket_options({"max_message_size": 512})
+
+    def test_accepts_max_16mb(self):
+        # boundary: exactly the RawSocket maximum (2**24) is valid
+        checkconfig.check_rawsocket_options({"max_message_size": 2**24})
+
+    def test_websocket_range_unaffected(self):
+        # the RawSocket split must not narrow WebSocket, which still allows up to
+        # 64 MB (a value invalid for RawSocket but valid for WebSocket).
+        checkconfig.check_websocket_options({"max_message_size": 32 * 1024 * 1024})
