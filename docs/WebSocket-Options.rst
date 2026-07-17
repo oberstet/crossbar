@@ -60,7 +60,7 @@ The available options are:
 +---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | max_frame_size                  | Maximum size in bytes of incoming WebSocket frames accepted or 0 to allow any size. (default: 0)                                                                                                       |
 +---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| max_message_size                | Maximum size in bytes of incoming WebSocket messages accepted or 0 to allow any size. (default: 0)                                                                                                     |
+| max_message_size                | Maximum size in bytes of incoming WebSocket messages accepted, or 0 to allow any size. (default: 16777216 = 16 MB)                                                                                     |
 +---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | auto_fragment_size              | Automatically fragment outgoing WebSocket messages into WebSocket frames of payload maximum specified size in bytes or 0 to disable. (default: 0)                                                      |
 +---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -110,6 +110,12 @@ message, ``max_frame_size`` alone cannot bound memory use: only
 decompression ("zip") bombs. Whenever you enable compression on a router-facing
 transport, set ``max_message_size`` to the largest message your application
 legitimately needs — see :doc:`WebSocket Compression <WebSocket-Compression>`.
+
+Since Crossbar.io 26.7.1, ``max_message_size`` **defaults to 16 MB** (``2**24``)
+on both the WebSocket and RawSocket transports — a secure default (previously the
+WebSocket default was ``0``, i.e. unlimited). Set it to ``0`` to explicitly allow
+any size, or raise it (WebSocket validation permits up to 64 MB; RawSocket cannot
+exceed 16 MB by protocol).
 
 Production Settings
 -------------------
