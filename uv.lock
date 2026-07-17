@@ -1524,7 +1524,7 @@ requires-dist = [
     { name = "wheel", marker = "extra == 'dev'" },
     { name = "wsaccel", marker = "platform_python_implementation == 'CPython'", specifier = ">=0.6.4" },
     { name = "xbr", specifier = ">=26.6.1" },
-    { name = "zlmdb", specifier = ">=26.6.1" },
+    { name = "zlmdb", specifier = ">=26.7.1" },
     { name = "zope-interface", specifier = ">=5.5.2" },
 ]
 provides-extras = ["dev", "dev-local", "docs"]
