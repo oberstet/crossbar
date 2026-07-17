@@ -34,6 +34,14 @@ __all__ = (
     "WampRawSocketClientProtocol",
 )
 
+# Secure-by-default receive size limit (uncompressed / application level) for
+# BOTH WAMP transports (crossbar #2251). 16 MB (2**24) is the largest message a
+# WAMP RawSocket can negotiate at all — the handshake length exponent tops out
+# at 2**(9+15) — so it is the largest value common to WebSocket and RawSocket.
+# Operators can raise it explicitly on WebSocket (validation permits up to
+# 64 MB); RawSocket cannot exceed it by protocol.
+DEFAULT_MAX_MESSAGE_SIZE = 2**24
+
 
 def set_websocket_options(factory, options):
     """
@@ -123,7 +131,7 @@ def set_websocket_options(factory, options):
             requireMaskedClientFrames=c.get("require_masked_client_frames", True),
             applyMask=c.get("apply_mask", True),
             maxFramePayloadSize=c.get("max_frame_size", 0),
-            maxMessagePayloadSize=c.get("max_message_size", 0),
+            maxMessagePayloadSize=c.get("max_message_size", DEFAULT_MAX_MESSAGE_SIZE),
             autoFragmentSize=c.get("auto_fragment_size", 0),
             failByDrop=c.get("fail_by_drop", False),
             echoCloseCodeReason=c.get("echo_close_codereason", False),
@@ -148,7 +156,7 @@ def set_websocket_options(factory, options):
             maskClientFrames=c.get("mask_client_frames", True),
             applyMask=c.get("apply_mask", True),
             maxFramePayloadSize=c.get("max_frame_size", 0),
-            maxMessagePayloadSize=c.get("max_message_size", 0),
+            maxMessagePayloadSize=c.get("max_message_size", DEFAULT_MAX_MESSAGE_SIZE),
             autoFragmentSize=c.get("auto_fragment_size", 0),
             failByDrop=c.get("fail_by_drop", False),
             echoCloseCodeReason=c.get("echo_close_codereason", False),
@@ -559,7 +567,7 @@ def set_rawsocket_options(factory, options):
     :type options: dict
     """
     c = options
-    factory.setProtocolOptions(maxMessagePayloadSize=c.get("max_message_size", None))
+    factory.setProtocolOptions(maxMessagePayloadSize=c.get("max_message_size", DEFAULT_MAX_MESSAGE_SIZE))
 
 
 class WampRawSocketServerProtocol(rawsocket.WampRawSocketServerProtocol):
