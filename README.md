@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/crossbar.svg)](https://pypi.python.org/pypi/crossbar)
 [![Python](https://img.shields.io/pypi/pyversions/crossbar.svg)](https://pypi.python.org/pypi/crossbar)
 [![CI](https://github.com/crossbario/crossbar/workflows/main/badge.svg)](https://github.com/crossbario/crossbar/actions?query=workflow%3Amain)
-[![Docs](https://readthedocs.org/projects/crossbar/badge/?version=latest)](https://crossbar.readthedocs.io/en/latest/)
+[![Docs](https://readthedocs.org/projects/crossbario/badge/?version=latest)](https://crossbario.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/crossbar.svg)](https://github.com/crossbario/crossbar/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/pypi/dm/crossbar.svg)](https://pypi.python.org/pypi/crossbar)
 

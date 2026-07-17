@@ -22,14 +22,14 @@ For detailed changelog entries, see :doc:`changelog`.
 
 * `GitHub Release <https://github.com/crossbario/crossbar/releases/tag/v23.1.2>`__
 * `PyPI Package <https://pypi.org/project/crossbar/23.1.2/>`__
-* `Documentation <https://crossbar.readthedocs.io/en/v23.1.2/>`__
+* `Documentation <https://crossbario.readthedocs.io/en/v23.1.2/>`__
 
 23.1.1
 ------
 
 * `GitHub Release <https://github.com/crossbario/crossbar/releases/tag/v23.1.1>`__
 * `PyPI Package <https://pypi.org/project/crossbar/23.1.1/>`__
-* `Documentation <https://crossbar.readthedocs.io/en/v23.1.1/>`__
+* `Documentation <https://crossbario.readthedocs.io/en/v23.1.1/>`__
 
 22.6.1
 ------

@@ -27,6 +27,7 @@ from typing import Dict, Optional, Tuple
 # crossbar/test/test_codename.py).
 _CODENAMES: Dict[Tuple[int, int], str] = {
     (26, 6): "Resistance Is Futile",
+    (26, 7): "Shields Up",
 }
 
 

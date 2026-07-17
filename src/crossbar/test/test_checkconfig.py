@@ -308,6 +308,15 @@ class CheckWebsocketTests(TestCase):
     def test_max_frame_size_positive_allowed(self):
         checkconfig.check_websocket_options({"max_frame_size": 65536})
 
+    def test_max_message_size_zero_allowed(self):
+        # 0 is the documented "unlimited" spelling for WebSocket max_message_size
+        # and a valid autobahn value; the validator must accept it (#2254).
+        checkconfig.check_websocket_options({"max_message_size": 0})
+
+    def test_max_message_size_negative_rejected(self):
+        with self.assertRaises(checkconfig.InvalidConfigException):
+            checkconfig.check_websocket_options({"max_message_size": -1})
+
 
 class CheckRealmTests(TestCase):
     """

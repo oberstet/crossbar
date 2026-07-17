@@ -19,6 +19,9 @@ class TestCodename(unittest.TestCase):
     def test_known_series(self):
         self.assertEqual(get_codename("26.6.1"), "Resistance Is Futile")
 
+    def test_known_series_26_7(self):
+        self.assertEqual(get_codename("26.7.1"), "Shields Up")
+
     def test_dev_suffix(self):
         # a .devN suffix on a known year.month series still resolves
         self.assertEqual(get_codename("26.6.1.dev1"), "Resistance Is Futile")
